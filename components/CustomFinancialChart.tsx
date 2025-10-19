@@ -84,6 +84,11 @@ const CustomFinancialChart: React.FC<CustomFinancialChartProps> = ({ data, indic
     mainChartHeight: 0,
     rsiPanel: { y: 0, height: 0 },
     macdPanel: { y: 0, height: 0 },
+    // Touch gesture state
+    lastTouchDistance: 0,
+    initialZoom: 1,
+    touchStartTime: 0,
+    longPressTimer: null as number | null,
   }).current;
 
   const colors = theme === 'dark' ? darkColors : lightColors;
@@ -647,17 +652,126 @@ const CustomFinancialChart: React.FC<CustomFinancialChartProps> = ({ data, indic
     setView(v => ({ ...v, zoom: newZoom, offset: Math.max(0, newOffset) }));
   };
 
+  // Touch event handlers for mobile
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    const rect = canvasRef.current!.getBoundingClientRect();
+    
+    if (e.touches.length === 1) {
+      // Single touch - start dragging
+      chartState.isDragging = true;
+      chartState.dragStart = touch.clientX;
+      chartState.initialOffset = view.offset;
+      chartState.touchStartTime = Date.now();
+      
+      // Long press for crosshair
+      chartState.longPressTimer = window.setTimeout(() => {
+        const x = touch.clientX - rect.left;
+        const y = touch.clientY - rect.top;
+        setView(v => ({...v, crosshairX: x, crosshairY: y}));
+        // Haptic feedback if available
+        if (navigator.vibrate) {
+          navigator.vibrate(50);
+        }
+      }, 500);
+    } else if (e.touches.length === 2) {
+      // Two finger pinch - start zooming
+      if (chartState.longPressTimer) {
+        clearTimeout(chartState.longPressTimer);
+        chartState.longPressTimer = null;
+      }
+      chartState.isDragging = false;
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const distance = Math.hypot(
+        touch2.clientX - touch1.clientX,
+        touch2.clientY - touch1.clientY
+      );
+      chartState.lastTouchDistance = distance;
+      chartState.initialZoom = view.zoom;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    e.preventDefault();
+    const rect = canvasRef.current!.getBoundingClientRect();
+    
+    if (chartState.longPressTimer) {
+      clearTimeout(chartState.longPressTimer);
+      chartState.longPressTimer = null;
+    }
+    
+    if (e.touches.length === 1 && chartState.isDragging) {
+      // Single finger drag
+      const touch = e.touches[0];
+      const dx = touch.clientX - chartState.dragStart;
+      const offsetChange = Math.round(dx / (candleWidth * view.zoom));
+      const newOffset = Math.max(0, Math.min(data.length - 10, chartState.initialOffset - offsetChange));
+      
+      const x = touch.clientX - rect.left;
+      const y = touch.clientY - rect.top;
+      setView(v => ({...v, offset: newOffset, crosshairX: x, crosshairY: y }));
+    } else if (e.touches.length === 2) {
+      // Two finger pinch zoom
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const distance = Math.hypot(
+        touch2.clientX - touch1.clientX,
+        touch2.clientY - touch1.clientY
+      );
+      
+      if (chartState.lastTouchDistance > 0) {
+        const zoomFactor = distance / chartState.lastTouchDistance;
+        const newZoom = Math.max(0.2, Math.min(10, chartState.initialZoom * zoomFactor));
+        
+        // Zoom centered on the midpoint between fingers
+        const midX = ((touch1.clientX + touch2.clientX) / 2) - rect.left;
+        const indexAtCenter = getIndexFromX(midX);
+        const newOffset = Math.round(view.offset + (indexAtCenter - startIndex) * (1 - newZoom / view.zoom));
+        
+        setView(v => ({ ...v, zoom: newZoom, offset: Math.max(0, newOffset) }));
+      }
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (chartState.longPressTimer) {
+      clearTimeout(chartState.longPressTimer);
+      chartState.longPressTimer = null;
+    }
+    
+    // Check for double tap
+    const touchDuration = Date.now() - chartState.touchStartTime;
+    if (e.touches.length === 0 && touchDuration < 300 && !chartState.isDragging) {
+      // Quick tap - could be double tap
+      // Reset zoom on double tap (implement if needed)
+    }
+    
+    chartState.isDragging = false;
+    chartState.lastTouchDistance = 0;
+    
+    // Hide crosshair after touch ends
+    if (e.touches.length === 0) {
+      setTimeout(() => {
+        setView(v => ({...v, crosshairX: null, crosshairY: null}));
+      }, 1000);
+    }
+  };
+
   return (
-    <div className="w-full h-full overflow-hidden">
+    <div className="w-full h-full overflow-hidden touch-none">
       <canvas 
         ref={canvasRef} 
         onMouseDown={handleMouseDown} 
         onMouseMove={handleMouseMove} 
         onMouseUp={handleMouseUp} 
         onMouseLeave={handleMouseLeave} 
-        onWheel={handleWheel} 
+        onWheel={handleWheel}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
         className="block w-full h-full cursor-crosshair"
-        style={{ display: 'block', width: '100%', height: '100%' }}
+        style={{ display: 'block', width: '100%', height: '100%', touchAction: 'none' }}
       />
     </div>
   );
