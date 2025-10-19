@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Crypto Insight AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              'gray-900': '#121212',
+              'gray-800': '#1e1e1e',
+              'gray-700': '#2a2a2a',
+              'gray-600': '#3a3a3a',
+              // Night theme
+              'night-blue': '#0B0F2B',
+              'night-purple': '#1E194D',
+              'neon-pink': '#F400F9',
+              'neon-cyan': '#00FBFB',
+              // Day theme
+              'day-sky': '#E0F7FA',
+              'day-blue': '#B3E5FC',
+              'day-sun': '#FFD54F',
+            },
+            keyframes: {
+              'float-light': {
+                '0%, 100%': { transform: 'translateY(-2px)' },
+                '50%': { transform: 'translateY(2px)' },
+              },
+               'float-heavy': {
+                '0%, 100%': { transform: 'translateY(-4px)' },
+                '50%': { transform: 'translateY(4px)' },
+              },
+            },
+            animation: {
+              'float-light': 'float-light 4s ease-in-out infinite',
+              'float-heavy': 'float-heavy 5s ease-in-out infinite',
+            },
+            backgroundImage: {
+              'night-gradient': 'linear-gradient(135deg, #0B0F2B 0%, #1E194D 100%)',
+              'day-gradient': 'linear-gradient(135deg, #E0F7FA 0%, #B3E5FC 100%)',
+            }
+          },
+        },
+      }
+    </script>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "recharts": "https://aistudiocdn.com/recharts@^3.3.0",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.25.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-gray-100 dark:bg-gray-900">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>

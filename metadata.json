@@ -1,0 +1,5 @@
+{
+  "name": "Crypto Insight AI",
+  "description": "An AI-powered crypto charting and analytics platform providing real-time data, interactive charts with technical indicators, and educational insights for investors. It uses Kraken's APIs for market data and Gemini for AI-driven explanations.",
+  "requestFramePermissions": []
+}
