@@ -558,6 +558,8 @@ const CustomFinancialChart: React.FC<CustomFinancialChartProps> = ({ data, indic
     const resizeObserver = new ResizeObserver(entries => {
         const { width, height } = entries[0].contentRect;
         const dpr = window.devicePixelRatio || 1;
+        
+        // Allocate full width for canvas (includes chart + Y-axis)
         canvas.width = width * dpr;
         canvas.height = height * dpr;
         canvas.style.width = `${width}px`;
@@ -567,6 +569,7 @@ const CustomFinancialChart: React.FC<CustomFinancialChartProps> = ({ data, indic
         
         chartState.width = width;
         chartState.height = height;
+        // Chart area takes up full width minus Y_AXIS_WIDTH
         chartState.chartWidth = width - Y_AXIS_WIDTH;
 
         let indicatorPanelsCount = 0;
@@ -644,7 +647,20 @@ const CustomFinancialChart: React.FC<CustomFinancialChartProps> = ({ data, indic
     setView(v => ({ ...v, zoom: newZoom, offset: Math.max(0, newOffset) }));
   };
 
-  return <canvas ref={canvasRef} onMouseDown={handleMouseDown} onMouseMove={handleMouseMove} onMouseUp={handleMouseUp} onMouseLeave={handleMouseLeave} onWheel={handleWheel} className="w-full h-full cursor-crosshair" />;
+  return (
+    <div className="w-full h-full overflow-hidden">
+      <canvas 
+        ref={canvasRef} 
+        onMouseDown={handleMouseDown} 
+        onMouseMove={handleMouseMove} 
+        onMouseUp={handleMouseUp} 
+        onMouseLeave={handleMouseLeave} 
+        onWheel={handleWheel} 
+        className="block w-full h-full cursor-crosshair"
+        style={{ display: 'block', width: '100%', height: '100%' }}
+      />
+    </div>
+  );
 };
 
 export default CustomFinancialChart;

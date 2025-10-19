@@ -218,9 +218,9 @@ const MainApplication: React.FC = () => {
         onToggleTheme={toggleTheme}
       />
       <main className="p-4 grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-4">
-        <div className="flex flex-col space-y-4">
+        <div className="flex flex-col space-y-4 min-w-0">
           <MarketDataPanel latestData={latestData} liveTrade={liveTrade} pair={selectedPair} />
-          <div className="relative bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md flex-grow">
+          <div className="relative bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md flex-grow min-h-0 overflow-hidden">
              <AIChartSummary 
                 summary={aiChartSummary}
                 isLoading={isAiSummaryLoading}
@@ -235,11 +235,13 @@ const MainApplication: React.FC = () => {
                  <p className="text-red-500">{error}</p>
               </div>
             ) : (
-              <CustomFinancialChart 
-                data={processedChartData} 
-                indicators={indicators}
-                theme={theme}
-              />
+              <div className="w-full h-full">
+                <CustomFinancialChart 
+                  data={processedChartData} 
+                  indicators={indicators}
+                  theme={theme}
+                />
+              </div>
             )}
           </div>
         </div>
