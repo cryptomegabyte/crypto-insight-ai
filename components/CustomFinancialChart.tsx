@@ -197,6 +197,7 @@ const CustomFinancialChart: React.FC<CustomFinancialChartProps> = ({ data, indic
     
     drawXAxis(ctx);
     drawCrosshair(ctx);
+    drawLegend(ctx);
   };
   
   const drawGrid = (ctx: CanvasRenderingContext2D, yOffset: number, height: number) => {
@@ -223,28 +224,127 @@ const CustomFinancialChart: React.FC<CustomFinancialChartProps> = ({ data, indic
       }
   };
   
+  const drawLegend = (ctx: CanvasRenderingContext2D) => {
+    // Draw legend showing active indicators
+    const legendItems: { label: string; color: string }[] = [];
+    
+    if (indicators.sma) legendItems.push({ label: 'SMA50', color: colors.sma });
+    if (indicators.ema) legendItems.push({ label: 'EMA20', color: colors.ema });
+    if (indicators.bb) legendItems.push({ label: 'BB', color: colors.bb });
+    if (indicators.rsi) legendItems.push({ label: 'RSI', color: colors.rsi });
+    if (indicators.macd) legendItems.push({ label: 'MACD', color: colors.macd });
+    if (indicators.ichimoku) legendItems.push({ label: 'Ichimoku', color: colors.ichimokuTenkan });
+    
+    if (legendItems.length === 0) return;
+    
+    // Calculate legend dimensions
+    ctx.font = '12px sans-serif';
+    let totalWidth = 0;
+    const itemWidths: number[] = [];
+    
+    for (const item of legendItems) {
+        const textWidth = ctx.measureText(item.label).width;
+        const itemWidth = textWidth + 20; // 10px color box + 5px padding + text + 5px padding
+        itemWidths.push(itemWidth);
+        totalWidth += itemWidth + 10; // 10px spacing between items
+    }
+    
+    // Draw legend background at top-left
+    const padding = 8;
+    const legendHeight = 20;
+    ctx.fillStyle = colors.background;
+    ctx.globalAlpha = 0.95;
+    ctx.fillRect(padding, padding, totalWidth + padding, legendHeight + padding * 2);
+    ctx.globalAlpha = 1;
+    
+    // Draw legend items
+    let xOffset = padding * 2;
+    for (let i = 0; i < legendItems.length; i++) {
+        const item = legendItems[i];
+        
+        // Draw color box
+        ctx.fillStyle = item.color;
+        ctx.fillRect(xOffset, padding + 4, 10, 10);
+        
+        // Draw label
+        ctx.fillStyle = colors.text;
+        ctx.fillText(item.label, xOffset + 15, padding + 12);
+        
+        xOffset += itemWidths[i] + 10;
+    }
+  };
+
   const drawYAxis = (ctx: CanvasRenderingContext2D, yOffset: number, height: number, minVal: number, maxVal: number, formatter: (val: number) => string) => {
     ctx.fillStyle = colors.text;
     ctx.font = '12px sans-serif';
     const range = maxVal - minVal;
+    const maxLabelWidth = Y_AXIS_WIDTH - 10; // Leave 5px margin on each side
+    
     for (let i = 0; i <= 5; i++) {
         const val = maxVal - (range * i / 5);
         const y = yOffset + (height * i / 5);
-        ctx.fillText(formatter(val), chartState.chartWidth + 5, y + 4);
+        const label = formatter(val);
+        const textWidth = ctx.measureText(label).width;
+        
+        // Measure text and truncate if needed
+        let displayLabel = label;
+        if (textWidth > maxLabelWidth) {
+            // Try to truncate while keeping it readable
+            displayLabel = label.substring(0, Math.max(1, Math.floor(label.length * maxLabelWidth / textWidth))) + '...';
+        }
+        
+        // Draw background for better readability
+        const finalTextWidth = ctx.measureText(displayLabel).width;
+        ctx.fillStyle = colors.background;
+        ctx.fillRect(chartState.chartWidth, y - 8, Y_AXIS_WIDTH, 16);
+        
+        // Draw text right-aligned within the axis width
+        ctx.fillStyle = colors.text;
+        ctx.textAlign = 'right';
+        ctx.fillText(displayLabel, chartState.chartWidth + Y_AXIS_WIDTH - 5, y + 4);
+        ctx.textAlign = 'left';
     }
   };
 
   const drawXAxis = (ctx: CanvasRenderingContext2D) => {
     ctx.fillStyle = colors.text;
     ctx.font = '12px sans-serif';
-    const timeStep = Math.max(1, Math.floor(visibleCandles / 5));
+    ctx.textAlign = 'center';
+    
+    // Dynamically adjust timeStep to avoid overlapping labels
+    let timeStep = Math.max(1, Math.floor(visibleCandles / 5));
+    let minLabelSpacing = 60; // Minimum pixel spacing between labels
+    
+    // Measure first label to ensure spacing
+    const sampleDate = new Date(data[startIndex]?.time * 1000 || 0).toLocaleDateString(undefined, { month: 'short', day: 'numeric'});
+    const labelWidth = ctx.measureText(sampleDate).width + 10; // Add margin
+    
+    // Adjust timeStep to ensure labels don't overlap
+    while (true) {
+        const pixelsPerCandle = (chartState.chartWidth / visibleCandles) * view.zoom;
+        const pixelsBetweenLabels = pixelsPerCandle * timeStep;
+        if (pixelsBetweenLabels >= labelWidth || timeStep >= visibleCandles / 2) break;
+        timeStep++;
+    }
+    
     for (let i = startIndex; i < endIndex; i += timeStep) {
         const d = data[i];
         if (!d) continue;
         const x = getX(i);
+        if (x < 0 || x > chartState.chartWidth) continue; // Skip if outside visible area
+        
         const date = new Date(d.time * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric'});
-        ctx.fillText(date, x - 20, chartState.height - 5);
+        
+        // Draw background for better readability
+        const textWidth = ctx.measureText(date).width;
+        ctx.fillStyle = colors.background;
+        ctx.fillRect(x - textWidth/2 - 5, chartState.height - X_AXIS_HEIGHT, textWidth + 10, X_AXIS_HEIGHT - 2);
+        
+        // Draw text
+        ctx.fillStyle = colors.text;
+        ctx.fillText(date, x, chartState.height - 5);
     }
+    ctx.textAlign = 'left';
   }
 
   const drawVolume = (ctx: CanvasRenderingContext2D) => {
