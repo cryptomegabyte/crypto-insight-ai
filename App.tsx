@@ -12,6 +12,7 @@ import OpportunityFeed from './components/OpportunityFeed';
 import { analyzeOpportunities } from './lib/opportunityAnalyzer';
 import { generateChartSummary } from './lib/chartSummaryEngine';
 import AIChartSummary from './components/AIChartSummary';
+import AIChatAssistant from './components/AIChatAssistant';
 
 type IndicatorsState = {
   sma: boolean;
@@ -37,6 +38,7 @@ const MainApplication: React.FC = () => {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [aiChartSummary, setAiChartSummary] = useState('');
   const [isAiSummaryLoading, setIsAiSummaryLoading] = useState(false);
+  const [showAIChat, setShowAIChat] = useState(false);
 
   // Indicators State
   const [isIndicatorsModalOpen, setIsIndicatorsModalOpen] = useState(false);
@@ -245,8 +247,32 @@ const MainApplication: React.FC = () => {
             )}
           </div>
         </div>
-        <div className="xl:col-span-1">
-          <OpportunityFeed opportunities={opportunities} />
+        <div className="xl:col-span-1 space-y-2 sm:space-y-4">
+          {/* AI Chat Toggle Button */}
+          <button
+            onClick={() => setShowAIChat(!showAIChat)}
+            className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white px-4 py-3 rounded-lg shadow-md transition-all duration-300 font-semibold"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+            </svg>
+            <span>{showAIChat ? 'Hide' : 'Show'} AI Assistant</span>
+          </button>
+
+          {/* AI Chat Panel */}
+          {showAIChat && (
+            <div className="h-[600px]">
+              <AIChatAssistant
+                chartData={processedChartData}
+                pair={selectedPair}
+                interval={selectedInterval}
+                latestPrice={latestData?.close || 0}
+              />
+            </div>
+          )}
+
+          {/* Opportunity Feed */}
+          {!showAIChat && <OpportunityFeed opportunities={opportunities} />}
         </div>
       </main>
       <footer className="text-center p-4 text-xs text-gray-500">
