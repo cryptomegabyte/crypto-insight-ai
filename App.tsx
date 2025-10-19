@@ -10,7 +10,7 @@ import IndicatorsModal from './components/indicators/IndicatorsModal';
 import LandingPage from './components/LandingPage';
 import OpportunityFeed from './components/OpportunityFeed';
 import { analyzeOpportunities } from './lib/opportunityAnalyzer';
-import { geminiService } from './services/geminiService';
+import { generateChartSummary } from './lib/chartSummaryEngine';
 import AIChartSummary from './components/AIChartSummary';
 
 type IndicatorsState = {
@@ -144,50 +144,24 @@ const MainApplication: React.FC = () => {
   }, [processedChartData]);
 
   useEffect(() => {
-    const generateSummary = async () => {
-      if (processedChartData.length < 50) return;
+    const generateSummary = () => {
+      if (processedChartData.length < 50) {
+        setAiChartSummary('🔄 Waiting for data...');
+        return;
+      }
 
       setIsAiSummaryLoading(true);
 
-      const latestPoint = processedChartData[processedChartData.length - 1];
-      const activeIndicators: string[] = [];
-      if (indicators.sma && latestPoint.sma50) activeIndicators.push(`Price is ${latestPoint.close > latestPoint.sma50 ? 'above' : 'below'} the 50-period SMA.`);
-      if (indicators.rsi && latestPoint.rsi) activeIndicators.push(`RSI(14) is at ${latestPoint.rsi.toFixed(1)}.`);
-      if (indicators.macd && latestPoint.macd && latestPoint.macdSignal) activeIndicators.push(`MACD is ${latestPoint.macd > latestPoint.macdSignal ? 'bullishly' : 'bearishly'} crossed.`);
-      if (indicators.bb && latestPoint.bbUpper && latestPoint.bbLower) {
-          const bandwidth = (latestPoint.bbUpper - latestPoint.bbLower) / latestPoint.bbMiddle!;
-          if(bandwidth < 0.1) activeIndicators.push('Bollinger Bands are squeezing.'); // Example threshold
-      }
-
-      const opportunityTitles = opportunities.length > 0 ? `Key recent events include: ${opportunities.slice(0, 2).map(o => o.title).join(', ')}.` : 'No major patterns detected recently.';
-      
-      const prompt = `
-        You are an expert technical analyst providing commentary for a charting platform. 
-        The user is viewing ${selectedPair.name} (${selectedPair.id}) on the ${selectedInterval.id} timeframe.
-
-        Current technical context:
-        - ${activeIndicators.join(' ')}
-        - ${opportunityTitles}
-
-        Based ONLY on this context, provide a concise, neutral, and insightful summary (max 40 words) of the current market structure.
-        Focus on the story the chart is telling. Do not give financial advice, predict the future, or use sensational language.
-      `;
-
-      try {
-        const summary = await geminiService.generateChartSummary(prompt);
-        setAiChartSummary(summary);
-      } catch (err) {
-        console.error("Failed to generate AI chart summary:", err);
-        setAiChartSummary("Could not analyze chart at this time.");
-      } finally {
-        setIsAiSummaryLoading(false);
-      }
+      // Generate summary locally without API calls
+      const summary = generateChartSummary(processedChartData, selectedPair, selectedInterval);
+      setAiChartSummary(summary);
+      setIsAiSummaryLoading(false);
     };
     
-    const timeoutId = setTimeout(generateSummary, 1000); // Debounce to avoid rapid firing
-    return () => clearTimeout(timeoutId);
+    // Generate summary immediately (no debounce needed since it's local)
+    generateSummary();
 
-  }, [processedChartData, opportunities, indicators, selectedPair, selectedInterval]);
+  }, [processedChartData, selectedPair, selectedInterval]);
 
 
   const latestData = processedChartData.length > 0 ? processedChartData[processedChartData.length - 1] : null;
