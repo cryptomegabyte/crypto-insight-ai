@@ -1,5 +1,3 @@
-import { Type } from "@google/genai";
-
 export interface Pair {
   id: 'BTC/USD' | 'ETH/USD' | 'XRP/USD' | 'SOL/USD';
   name: string;

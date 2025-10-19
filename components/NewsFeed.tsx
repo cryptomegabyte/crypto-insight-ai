@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { geminiService } from '../services/geminiService';
 import type { Pair, NewsArticle } from '../types';
 
 interface NewsFeedProps {
@@ -26,21 +25,28 @@ const NewsFeed: React.FC<NewsFeedProps> = ({ pair }) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchNewsData = async () => {
+    const fetchNewsData = () => {
       setLoading(true);
       setError(null);
       setSummary('');
       setArticles([]);
-      try {
-        const { summary, articles } = await geminiService.fetchNews(pair.name);
-        setSummary(summary);
-        setArticles(articles.slice(0, 5)); // Limit to 5 articles
-      } catch (err) {
-        setError('Failed to fetch news.');
-        console.error(err);
-      } finally {
+      
+      // Simulate API delay
+      setTimeout(() => {
+        // Mock news data
+        const mockSummary = `Recent ${pair.name} market activity shows increased volatility with strong trading volume across major exchanges.`;
+        const mockArticles: NewsArticle[] = [
+          { title: `${pair.name} Shows Strong Market Performance`, uri: 'https://example.com/news1' },
+          { title: `Analysts Predict Continued Interest in ${pair.name}`, uri: 'https://example.com/news2' },
+          { title: `${pair.name} Trading Volume Increases`, uri: 'https://example.com/news3' },
+          { title: `Market Update: ${pair.name} Analysis`, uri: 'https://example.com/news4' },
+          { title: `${pair.name} Technical Breakdown`, uri: 'https://example.com/news5' },
+        ];
+        
+        setSummary(mockSummary);
+        setArticles(mockArticles);
         setLoading(false);
-      }
+      }, 500);
     };
 
     fetchNewsData();
