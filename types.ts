@@ -58,6 +58,13 @@ export interface Opportunity {
   dataPointIndex?: number; // Optional index to highlight on the chart
 }
 
+export interface ScoredOpportunity extends Opportunity {
+  confidence: number; // 0-100
+  riskLevel: 'low' | 'medium' | 'high';
+  suggestedAction: 'watch' | 'consider' | 'strong_signal';
+  rationale: string;
+}
+
 
 // Fix: Add AssetProfileData type.
 export interface AssetProfileData {
