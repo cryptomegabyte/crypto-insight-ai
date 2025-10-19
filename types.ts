@@ -62,18 +62,3 @@ export interface ScoredOpportunity extends Opportunity {
   suggestedAction: 'watch' | 'consider' | 'strong_signal';
   rationale: string;
 }
-
-
-// Fix: Add AssetProfileData type.
-export interface AssetProfileData {
-  name: string;
-  symbol: string;
-  description: string;
-  links: Record<string, string | undefined | null>;
-}
-
-// Fix: Add NewsArticle type.
-export interface NewsArticle {
-  uri: string;
-  title: string;
-}
