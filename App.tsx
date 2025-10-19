@@ -217,10 +217,10 @@ const MainApplication: React.FC = () => {
         theme={theme}
         onToggleTheme={toggleTheme}
       />
-      <main className="p-4 grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-4">
-        <div className="flex flex-col space-y-4 min-w-0">
+      <main className="p-2 sm:p-4 grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-2 sm:gap-4">
+        <div className="flex flex-col space-y-2 sm:space-y-4 min-w-0">
           <MarketDataPanel latestData={latestData} liveTrade={liveTrade} pair={selectedPair} />
-          <div className="relative bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md flex-grow min-h-0 overflow-hidden">
+          <div className="relative bg-white dark:bg-gray-800 p-2 sm:p-4 rounded-lg shadow-md flex-grow min-h-[400px] sm:min-h-[500px] overflow-hidden">
              <AIChartSummary 
                 summary={aiChartSummary}
                 isLoading={isAiSummaryLoading}
@@ -245,7 +245,7 @@ const MainApplication: React.FC = () => {
             )}
           </div>
         </div>
-        <div className="lg:col-span-1">
+        <div className="xl:col-span-1">
           <OpportunityFeed opportunities={opportunities} />
         </div>
       </main>

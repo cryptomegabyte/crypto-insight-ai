@@ -48,17 +48,17 @@ const OpportunityCard: React.FC<{ opportunity: Opportunity | ScoredOpportunity }
     };
 
     return (
-        <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-md transition-all duration-300 ${getAccentColor()}`}>
-            <button onClick={handleCardClick} className="w-full text-left p-4">
-                <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-md transition-all duration-300 ${getAccentColor()} hover:shadow-lg`}>
+            <button onClick={handleCardClick} className="w-full text-left p-3 sm:p-4 active:bg-gray-50 dark:active:bg-gray-700 transition-colors">
+                <div className="flex items-start space-x-2 sm:space-x-3">
+                    <div className="flex-shrink-0 mt-0.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={getIcon()} />
                         </svg>
                     </div>
-                    <div className="flex-grow">
-                        <p className="font-semibold text-gray-800 dark:text-gray-100">{opportunity.title}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">{opportunity.description}</p>
+                    <div className="flex-grow min-w-0">
+                        <p className="font-semibold text-sm sm:text-base text-gray-800 dark:text-gray-100">{opportunity.title}</p>
+                        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 line-clamp-2">{opportunity.description}</p>
                         {isScoredOpportunity && (
                             <div className="flex gap-2 mt-2 flex-wrap">
                                 <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${getActionBadgeColor(scored.suggestedAction)}`}>
