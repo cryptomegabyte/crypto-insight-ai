@@ -1,5 +1,7 @@
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import type { ChartDataPoint } from '../types';
+import { AnnotationManager, drawAnnotation, type AnnotationType, type Point } from '../lib/chartAnnotations';
+import DrawingToolbar from './DrawingToolbar';
 
 interface CustomFinancialChartProps {
   data: ChartDataPoint[];
@@ -67,6 +69,9 @@ const X_AXIS_HEIGHT = 25;
 
 const CustomFinancialChart: React.FC<CustomFinancialChartProps> = ({ data, indicators, theme }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const annotationManager = useRef(new AnnotationManager());
+  const [activeTool, setActiveTool] = useState<AnnotationType | null>(null);
+  const [annotationCount, setAnnotationCount] = useState(0);
   const [view, setView] = useState({
     offset: 0,
     zoom: 1,
@@ -203,6 +208,9 @@ const CustomFinancialChart: React.FC<CustomFinancialChartProps> = ({ data, indic
     drawXAxis(ctx);
     drawCrosshair(ctx);
     drawLegend(ctx);
+    
+    // Draw annotations
+    drawAnnotations(ctx);
   };
   
   const drawGrid = (ctx: CanvasRenderingContext2D, yOffset: number, height: number) => {
@@ -556,6 +564,19 @@ const CustomFinancialChart: React.FC<CustomFinancialChartProps> = ({ data, indic
         ctx.fillText(date, view.crosshairX - textWidth/2, chartState.height - 5);
     }
   };
+
+  const drawAnnotations = (ctx: CanvasRenderingContext2D) => {
+    // Draw completed annotations
+    annotationManager.current.getAnnotations().forEach(annotation => {
+      drawAnnotation(ctx, annotation, getPriceY, getX);
+    });
+
+    // Draw active annotation being drawn
+    const activeAnnotation = annotationManager.current.getActiveAnnotation();
+    if (activeAnnotation) {
+      drawAnnotation(ctx, activeAnnotation, getPriceY, getX);
+    }
+  };
   
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -605,9 +626,23 @@ const CustomFinancialChart: React.FC<CustomFinancialChartProps> = ({ data, indic
   
   useEffect(() => {
     draw();
-  }, [data, view, indicators, theme, colors, minPrice, maxPrice, minMACD, maxMACD]); 
+    setAnnotationCount(annotationManager.current.getAnnotations().length);
+  }, [data, view, indicators, theme, colors, minPrice, maxPrice, minMACD, maxMACD, annotationCount]); 
 
   const handleMouseDown = (e: React.MouseEvent) => {
+    const rect = canvasRef.current!.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    // If a drawing tool is active, start annotation
+    if (activeTool) {
+      const point: Point = { x, y, price: getPriceFromY(y) };
+      annotationManager.current.startAnnotation(activeTool, point);
+      draw();
+      return;
+    }
+    
+    // Otherwise, pan the chart
     chartState.isDragging = true;
     chartState.dragStart = e.clientX;
     chartState.initialOffset = view.offset;
@@ -617,6 +652,15 @@ const CustomFinancialChart: React.FC<CustomFinancialChartProps> = ({ data, indic
     const rect = canvasRef.current!.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
+    
+    // If drawing an annotation
+    if (activeTool && annotationManager.current.getActiveAnnotation()) {
+      const point: Point = { x, y, price: getPriceFromY(y) };
+      annotationManager.current.updateActiveAnnotation(point);
+      setView(v => ({...v, crosshairX: x, crosshairY: y}));
+      draw();
+      return;
+    }
     
     if (chartState.isDragging) {
       const dx = e.clientX - chartState.dragStart;
@@ -629,10 +673,24 @@ const CustomFinancialChart: React.FC<CustomFinancialChartProps> = ({ data, indic
   };
 
   const handleMouseUp = () => {
+    // Complete annotation if one is being drawn
+    if (activeTool && annotationManager.current.getActiveAnnotation()) {
+      annotationManager.current.completeAnnotation();
+      setAnnotationCount(annotationManager.current.getAnnotations().length);
+      draw();
+      return;
+    }
+    
     chartState.isDragging = false;
   };
 
   const handleMouseLeave = () => {
+    // Cancel annotation if drawing
+    if (activeTool && annotationManager.current.getActiveAnnotation()) {
+      annotationManager.current.cancelAnnotation();
+      draw();
+    }
+    
     chartState.isDragging = false;
     setView(v => ({...v, crosshairX: null, crosshairY: null}));
   };
@@ -759,7 +817,24 @@ const CustomFinancialChart: React.FC<CustomFinancialChartProps> = ({ data, indic
   };
 
   return (
-    <div className="w-full h-full overflow-hidden touch-none">
+    <div className="w-full h-full overflow-hidden touch-none relative">
+      <DrawingToolbar
+        activeTool={activeTool}
+        onSelectTool={(tool) => {
+          setActiveTool(tool);
+          if (!tool) {
+            annotationManager.current.cancelAnnotation();
+          }
+        }}
+        selectedColor={annotationManager.current.getSelectedColor()}
+        onSelectColor={(color) => annotationManager.current.setSelectedColor(color)}
+        onClearAll={() => {
+          annotationManager.current.clearAll();
+          setAnnotationCount(0);
+          draw();
+        }}
+        annotationCount={annotationCount}
+      />
       <canvas 
         ref={canvasRef} 
         onMouseDown={handleMouseDown} 
