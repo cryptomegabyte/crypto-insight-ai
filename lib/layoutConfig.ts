@@ -1,6 +1,6 @@
 import type { Layout } from 'react-grid-layout';
 
-export type PanelId = 'chart' | 'ai-chat' | 'ai-feed' | 'market-data' | 'opportunities' | 'performance' | 'ai-summary';
+export type PanelId = 'chart' | 'ai-chat' | 'ai-feed' | 'market-data' | 'opportunities' | 'performance';
 
 export interface PanelConfig {
   id: PanelId;
@@ -69,14 +69,6 @@ export const DEFAULT_PANELS: Record<PanelId, PanelConfig> = {
     visible: false,
     minW: 2,
     minH: 2
-  },
-  'ai-summary': {
-    id: 'ai-summary',
-    title: 'Chart Summary',
-    icon: '📝',
-    visible: false,
-    minW: 2,
-    minH: 2
   }
 };
 
@@ -88,11 +80,11 @@ export const LAYOUT_PRESETS: LayoutPreset[] = [
     description: 'Large AI panels with smaller chart - perfect for AI-guided trading',
     icon: '🤖',
     layout: [
-      { i: 'ai-feed', x: 0, y: 0, w: 3, h: 6, minW: 2, minH: 3 },
-      { i: 'chart', x: 3, y: 0, w: 6, h: 6, minW: 4, minH: 4 },
-      { i: 'market-data', x: 9, y: 0, w: 3, h: 3, minW: 2, minH: 2 },
-      { i: 'opportunities', x: 9, y: 3, w: 3, h: 3, minW: 2, minH: 2 },
-      { i: 'ai-chat', x: 0, y: 6, w: 12, h: 4, minW: 3, minH: 3 }
+      { i: 'ai-feed', x: 0, y: 0, w: 3, h: 8, minW: 2, minH: 3 },
+      { i: 'chart', x: 3, y: 0, w: 6, h: 8, minW: 4, minH: 4 },
+      { i: 'market-data', x: 9, y: 0, w: 3, h: 4, minW: 2, minH: 2 },
+      { i: 'opportunities', x: 9, y: 4, w: 3, h: 4, minW: 2, minH: 2 },
+      { i: 'ai-chat', x: 0, y: 8, w: 12, h: 5, minW: 3, minH: 3 }
     ],
     panelVisibility: {
       'chart': true,
@@ -100,21 +92,20 @@ export const LAYOUT_PRESETS: LayoutPreset[] = [
       'ai-feed': true,
       'market-data': true,
       'opportunities': true,
-      'performance': false,
-      'ai-summary': false
+      'performance': false
     }
   },
   {
     id: 'chart-first',
     name: 'Chart-First',
-    description: 'Full-screen chart focus with collapsible AI sidebars',
+    description: 'Large chart with AI assistance on the side',
     icon: '📈',
     layout: [
-      { i: 'chart', x: 0, y: 0, w: 9, h: 8, minW: 4, minH: 4 },
-      { i: 'ai-feed', x: 9, y: 0, w: 3, h: 4, minW: 2, minH: 3 },
-      { i: 'market-data', x: 9, y: 4, w: 3, h: 2, minW: 2, minH: 2 },
-      { i: 'opportunities', x: 9, y: 6, w: 3, h: 2, minW: 2, minH: 2 },
-      { i: 'ai-chat', x: 0, y: 8, w: 9, h: 3, minW: 3, minH: 3 }
+      { i: 'chart', x: 0, y: 0, w: 7, h: 8, minW: 4, minH: 4 },
+      { i: 'ai-feed', x: 7, y: 0, w: 5, h: 8, minW: 2, minH: 3 },
+      { i: 'market-data', x: 0, y: 8, w: 3, h: 3, minW: 2, minH: 2 },
+      { i: 'opportunities', x: 3, y: 8, w: 3, h: 3, minW: 2, minH: 2 },
+      { i: 'ai-chat', x: 0, y: 11, w: 12, h: 5, minW: 3, minH: 3 }
     ],
     panelVisibility: {
       'chart': true,
@@ -122,8 +113,7 @@ export const LAYOUT_PRESETS: LayoutPreset[] = [
       'ai-feed': true,
       'market-data': true,
       'opportunities': true,
-      'performance': false,
-      'ai-summary': false
+      'performance': false
     }
   },
   {
@@ -132,12 +122,11 @@ export const LAYOUT_PRESETS: LayoutPreset[] = [
     description: 'Equal attention to chart, AI, and market data',
     icon: '⚖️',
     layout: [
-      { i: 'ai-feed', x: 0, y: 0, w: 3, h: 5, minW: 2, minH: 3 },
-      { i: 'chart', x: 3, y: 0, w: 6, h: 7, minW: 4, minH: 4 },
-      { i: 'market-data', x: 9, y: 0, w: 3, h: 3, minW: 2, minH: 2 },
-      { i: 'opportunities', x: 9, y: 3, w: 3, h: 4, minW: 2, minH: 2 },
-      { i: 'ai-chat', x: 0, y: 5, w: 3, h: 5, minW: 3, minH: 3 },
-      { i: 'ai-summary', x: 3, y: 7, w: 6, h: 3, minW: 2, minH: 2 }
+      { i: 'ai-feed', x: 0, y: 0, w: 3, h: 8, minW: 2, minH: 3 },
+      { i: 'chart', x: 3, y: 0, w: 6, h: 8, minW: 4, minH: 4 },
+      { i: 'market-data', x: 9, y: 0, w: 3, h: 4, minW: 2, minH: 2 },
+      { i: 'opportunities', x: 9, y: 4, w: 3, h: 4, minW: 2, minH: 2 },
+      { i: 'ai-chat', x: 0, y: 8, w: 12, h: 5, minW: 3, minH: 3 }
     ],
     panelVisibility: {
       'chart': true,
@@ -145,27 +134,27 @@ export const LAYOUT_PRESETS: LayoutPreset[] = [
       'ai-feed': true,
       'market-data': true,
       'opportunities': true,
-      'performance': false,
-      'ai-summary': true
+      'performance': false
     }
   },
   {
     id: 'minimalist',
     name: 'Minimalist',
-    description: 'Only chart and AI chat - distraction-free trading',
+    description: 'Clean layout with essentials only',
     icon: '✨',
     layout: [
-      { i: 'chart', x: 0, y: 0, w: 12, h: 7, minW: 4, minH: 4 },
-      { i: 'ai-chat', x: 0, y: 7, w: 12, h: 4, minW: 3, minH: 3 }
+      { i: 'chart', x: 0, y: 0, w: 8, h: 8, minW: 4, minH: 4 },
+      { i: 'market-data', x: 8, y: 0, w: 4, h: 4, minW: 2, minH: 2 },
+      { i: 'ai-chat', x: 8, y: 4, w: 4, h: 4, minW: 2, minH: 3 },
+      { i: 'ai-feed', x: 0, y: 8, w: 12, h: 5, minW: 3, minH: 3 }
     ],
     panelVisibility: {
       'chart': true,
       'ai-chat': true,
-      'ai-feed': false,
-      'market-data': false,
+      'ai-feed': true,
+      'market-data': true,
       'opportunities': false,
-      'performance': false,
-      'ai-summary': false
+      'performance': false
     }
   },
   {
@@ -174,14 +163,12 @@ export const LAYOUT_PRESETS: LayoutPreset[] = [
     description: 'Advanced layout with all panels visible',
     icon: '💼',
     layout: [
-      { i: 'ai-feed', x: 0, y: 0, w: 2, h: 5, minW: 2, minH: 3 },
-      { i: 'chart', x: 2, y: 0, w: 7, h: 7, minW: 4, minH: 4 },
+      { i: 'ai-feed', x: 0, y: 0, w: 2, h: 7, minW: 2, minH: 3 },
+      { i: 'chart', x: 2, y: 0, w: 7, h: 9, minW: 4, minH: 4 },
       { i: 'market-data', x: 9, y: 0, w: 3, h: 3, minW: 2, minH: 2 },
-      { i: 'opportunities', x: 9, y: 3, w: 3, h: 2, minW: 2, minH: 2 },
-      { i: 'performance', x: 9, y: 5, w: 3, h: 2, minW: 2, minH: 2 },
-      { i: 'ai-summary', x: 2, y: 7, w: 4, h: 3, minW: 2, minH: 2 },
-      { i: 'ai-chat', x: 0, y: 5, w: 2, h: 5, minW: 3, minH: 3 },
-      { i: 'ai-chat', x: 6, y: 7, w: 3, h: 3, minW: 3, minH: 3 }
+      { i: 'opportunities', x: 9, y: 3, w: 3, h: 3, minW: 2, minH: 2 },
+      { i: 'performance', x: 9, y: 6, w: 3, h: 3, minW: 2, minH: 2 },
+      { i: 'ai-chat', x: 2, y: 9, w: 10, h: 4, minW: 3, minH: 3 }
     ],
     panelVisibility: {
       'chart': true,
@@ -189,22 +176,20 @@ export const LAYOUT_PRESETS: LayoutPreset[] = [
       'ai-feed': true,
       'market-data': true,
       'opportunities': true,
-      'performance': true,
-      'ai-summary': true
+      'performance': true
     }
   },
   {
     id: 'learning',
     name: 'Learning Mode',
-    description: 'Emphasizes AI education and chart analysis',
-    icon: '🎓',
+    description: 'Educational layout with chart analysis',
+    icon: '📚',
     layout: [
-      { i: 'chart', x: 0, y: 0, w: 6, h: 6, minW: 4, minH: 4 },
-      { i: 'ai-feed', x: 6, y: 0, w: 3, h: 6, minW: 2, minH: 3 },
-      { i: 'ai-summary', x: 9, y: 0, w: 3, h: 3, minW: 2, minH: 2 },
-      { i: 'market-data', x: 9, y: 3, w: 3, h: 3, minW: 2, minH: 2 },
-      { i: 'ai-chat', x: 0, y: 6, w: 9, h: 4, minW: 3, minH: 3 },
-      { i: 'opportunities', x: 9, y: 6, w: 3, h: 4, minW: 2, minH: 2 }
+      { i: 'chart', x: 0, y: 0, w: 7, h: 8, minW: 4, minH: 4 },
+      { i: 'ai-feed', x: 7, y: 0, w: 5, h: 10, minW: 2, minH: 3 },
+      { i: 'market-data', x: 0, y: 8, w: 3, h: 2, minW: 2, minH: 2 },
+      { i: 'opportunities', x: 3, y: 8, w: 4, h: 2, minW: 2, minH: 2 },
+      { i: 'ai-chat', x: 0, y: 10, w: 12, h: 4, minW: 3, minH: 3 }
     ],
     panelVisibility: {
       'chart': true,
@@ -212,8 +197,7 @@ export const LAYOUT_PRESETS: LayoutPreset[] = [
       'ai-feed': true,
       'market-data': true,
       'opportunities': true,
-      'performance': false,
-      'ai-summary': true
+      'performance': false
     }
   }
 ];

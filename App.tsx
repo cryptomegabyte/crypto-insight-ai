@@ -14,8 +14,6 @@ import IndicatorsModal from './components/indicators/IndicatorsModal';
 import LandingPage from './components/LandingPage';
 import OpportunityFeed from './components/OpportunityFeed';
 import { analyzeOpportunities } from './lib/opportunityAnalyzer';
-import { generateChartSummary } from './lib/chartSummaryEngine';
-import AIChartSummary from './components/AIChartSummary';
 import AIChatAssistant from './components/AIChatAssistant';
 import AITradingFeed from './components/AITradingFeed';
 import LayoutControlPanel from './components/LayoutControlPanel';
@@ -54,8 +52,6 @@ const MainApplication: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>('dark');
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
-  const [aiChartSummary, setAiChartSummary] = useState('');
-  const [isAiSummaryLoading, setIsAiSummaryLoading] = useState(false);
   
   // Layout State
   const savedLayoutData = loadLayout();
@@ -70,6 +66,9 @@ const MainApplication: React.FC = () => {
   
   // AI Feed State
   const [feedItems, setFeedItems] = useState<AIFeedItem[]>([]);
+
+  // Grid Layout State
+  const [gridWidth, setGridWidth] = useState(typeof window !== 'undefined' ? window.innerWidth - 32 : 1200);
 
   // Indicators State
   const [isIndicatorsModalOpen, setIsIndicatorsModalOpen] = useState(false);
@@ -95,6 +94,16 @@ const MainApplication: React.FC = () => {
     root.classList.remove(theme === 'dark' ? 'light' : 'dark');
     root.classList.add(theme);
   }, [theme]);
+
+  // Handle window resize for responsive grid
+  useEffect(() => {
+    const handleResize = () => {
+      setGridWidth(window.innerWidth - 32);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
 
   useEffect(() => {
@@ -189,27 +198,6 @@ const MainApplication: React.FC = () => {
       }
     }
   }, [processedChartData, selectedPair, selectedInterval]);
-
-  useEffect(() => {
-    const generateSummary = () => {
-      if (processedChartData.length < 50) {
-        setAiChartSummary('🔄 Waiting for data...');
-        return;
-      }
-
-      setIsAiSummaryLoading(true);
-
-      // Generate summary locally without API calls
-      const summary = generateChartSummary(processedChartData, selectedPair, selectedInterval);
-      setAiChartSummary(summary);
-      setIsAiSummaryLoading(false);
-    };
-    
-    // Generate summary immediately (no debounce needed since it's local)
-    generateSummary();
-
-  }, [processedChartData, selectedPair, selectedInterval]);
-
 
   const latestData = processedChartData.length > 0 ? processedChartData[processedChartData.length - 1] : null;
 
@@ -315,22 +303,17 @@ const MainApplication: React.FC = () => {
     switch (panelId) {
       case 'chart':
         return (
-          <div className="w-full h-full bg-gray-800 rounded-lg p-4 overflow-hidden">
-            <AIChartSummary 
-              summary={aiChartSummary}
-              isLoading={isAiSummaryLoading}
-              theme={theme}
-            />
+          <div className="w-full h-full flex flex-col bg-gray-800 rounded-lg overflow-hidden">
             {loading ? (
-              <div className="flex justify-center items-center h-full">
+              <div className="flex-1 flex justify-center items-center p-4">
                 <p>Loading Chart Data...</p>
               </div>
             ) : error ? (
-              <div className="flex justify-center items-center h-full">
+              <div className="flex-1 flex justify-center items-center p-4">
                 <p className="text-red-500">{error}</p>
               </div>
             ) : (
-              <div className="w-full h-full">
+              <div className="flex-1 min-h-0 p-2">
                 <CustomFinancialChart 
                   data={processedChartData} 
                   indicators={indicators}
@@ -376,20 +359,6 @@ const MainApplication: React.FC = () => {
             <p className="text-gray-400 text-sm">Coming soon...</p>
           </div>
         );
-      case 'ai-summary':
-        return (
-          <div className="w-full h-full bg-gray-800 rounded-lg p-4 overflow-auto">
-            <h3 className="text-white font-bold mb-2 flex items-center gap-2">
-              <span>📝</span>
-              Chart Summary
-            </h3>
-            <AIChartSummary 
-              summary={aiChartSummary}
-              isLoading={isAiSummaryLoading}
-              theme={theme}
-            />
-          </div>
-        );
       default:
         return <div>Panel not found</div>;
     }
@@ -427,14 +396,15 @@ const MainApplication: React.FC = () => {
           className="layout"
           layout={visiblePanels}
           cols={12}
-          rowHeight={60}
-          width={typeof window !== 'undefined' ? window.innerWidth - 32 : 1200}
+          rowHeight={80}
+          width={gridWidth}
           onLayoutChange={handleLayoutChange}
           isDraggable={true}
           isResizable={true}
           compactType="vertical"
           preventCollision={false}
           margin={[8, 8]}
+          containerPadding={[0, 0]}
         >
           {visiblePanels.map((item) => (
             <div 
