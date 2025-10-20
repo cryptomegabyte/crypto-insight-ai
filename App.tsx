@@ -204,6 +204,7 @@ const MainApplication: React.FC = () => {
 
   const handleBreakpointChange = useCallback((newBreakpoint: string) => {
     setCurrentBreakpoint(newBreakpoint);
+    console.log('Breakpoint changed to:', newBreakpoint, 'Window width:', window.innerWidth);
   }, []);
 
   const handlePresetChange = useCallback((preset: LayoutPreset) => {
@@ -365,13 +366,27 @@ const MainApplication: React.FC = () => {
     }
   };
 
-  // Get visible panels for grid layout
-  const visiblePanels = currentLayout.filter(item => 
-    panelVisibility[item.i as PanelId]
-  );
+  // Get visible panels for all breakpoints
+  const getVisibleLayouts = useCallback((): Layouts => {
+    const visible: Layouts = {};
+    Object.keys(currentLayouts).forEach(breakpoint => {
+      visible[breakpoint] = (currentLayouts[breakpoint] || []).filter(item => 
+        panelVisibility[item.i as PanelId]
+      );
+    });
+    return visible;
+  }, [currentLayouts, panelVisibility]);
+
+  const visibleLayouts = useMemo(() => getVisibleLayouts(), [getVisibleLayouts]);
+  
+  // Get current breakpoint visible panels for rendering children
+  const currentVisiblePanels = useMemo(() => {
+    const currentBpLayout = visibleLayouts[currentBreakpoint] || visibleLayouts['lg'] || [];
+    return currentBpLayout;
+  }, [visibleLayouts, currentBreakpoint]);
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans">
       <Header
         selectedPair={selectedPair}
         setSelectedPair={setSelectedPair}
@@ -392,10 +407,15 @@ const MainApplication: React.FC = () => {
       </Header>
 
       {/* Customizable Responsive Grid Layout */}
-      <main className="p-2 sm:p-4">
+      <main className="w-full max-w-full p-2 sm:p-4 box-border overflow-x-hidden">
+        {/* Debug: Show current breakpoint */}
+        <div className="fixed bottom-4 right-4 bg-blue-500 text-white px-3 py-1 rounded text-xs font-mono z-50 opacity-75 sm:hidden">
+          BP: {currentBreakpoint} | W: {typeof window !== 'undefined' ? window.innerWidth : 0}px
+        </div>
+        
         <ResponsiveGridLayout
           className="layout"
-          layouts={currentLayouts}
+          layouts={visibleLayouts}
           breakpoints={BREAKPOINTS}
           cols={COLS}
           rowHeight={ROW_HEIGHTS[currentBreakpoint as keyof typeof ROW_HEIGHTS] || 80}
@@ -406,10 +426,10 @@ const MainApplication: React.FC = () => {
           compactType="vertical"
           preventCollision={false}
           margin={[8, 8]}
-          containerPadding={[8, 8]}
+          containerPadding={[0, 0]}
           useCSSTransforms={true}
         >
-          {visiblePanels.map((item) => (
+          {currentVisiblePanels.map((item) => (
             <div 
               key={item.i}
               className="bg-gray-900/50 backdrop-blur-sm rounded-lg overflow-hidden border border-gray-700 hover:border-gray-600 transition-colors"

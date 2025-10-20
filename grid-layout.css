@@ -5,17 +5,40 @@
   position: relative;
   transition: height 200ms ease;
   min-height: 100vh;
+  width: 100% !important;
+  max-width: 100vw;
 }
 
 .react-grid-item {
   transition: all 200ms ease;
   transition-property: left, top, width, height;
   touch-action: none; /* Better touch interactions */
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+.react-grid-item > * {
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .react-grid-item img {
   pointer-events: none;
   user-select: none;
+}
+
+/* Ensure panels don't overflow on mobile */
+@media (max-width: 767px) {
+  .react-grid-layout {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  .react-grid-item {
+    width: 100% !important;
+    max-width: calc(100vw - 16px) !important;
+  }
 }
 
 /* Resize handle - larger on mobile for better touch targets */
