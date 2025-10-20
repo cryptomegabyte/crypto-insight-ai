@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import GridLayout, { Layout } from 'react-grid-layout';
+import { Responsive, WidthProvider, Layout, Layouts } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import './grid-layout.css';
+
+const ResponsiveGridLayout = WidthProvider(Responsive);
 import Header from './components/Header';
 import CustomFinancialChart from './components/CustomFinancialChart';
 import MarketDataPanel from './components/MarketDataPanel';
@@ -29,6 +31,7 @@ import {
   type LayoutPreset,
   DEFAULT_PANELS
 } from './lib/layoutConfig';
+import { BREAKPOINTS, COLS, ROW_HEIGHTS, createResponsiveLayouts } from './lib/responsiveLayouts';
 
 type IndicatorsState = {
   sma: boolean;
@@ -57,7 +60,11 @@ const MainApplication: React.FC = () => {
   const savedLayoutData = loadLayout();
   const savedPanelVis = loadPanelVisibility();
   const [currentLayout, setCurrentLayout] = useState<Layout[]>(savedLayoutData.layout);
+  const [currentLayouts, setCurrentLayouts] = useState<Layouts>(
+    savedLayoutData.layouts || createResponsiveLayouts(savedLayoutData.layout)
+  );
   const [currentPresetId, setCurrentPresetId] = useState<string | undefined>(savedLayoutData.presetId);
+  const [currentBreakpoint, setCurrentBreakpoint] = useState<string>('lg');
   const [panelVisibility, setPanelVisibility] = useState<Record<PanelId, boolean>>(
     savedPanelVis || Object.fromEntries(
       Object.entries(DEFAULT_PANELS).map(([id, panel]) => [id, panel.visible])
@@ -66,9 +73,6 @@ const MainApplication: React.FC = () => {
   
   // AI Feed State
   const [feedItems, setFeedItems] = useState<AIFeedItem[]>([]);
-
-  // Grid Layout State
-  const [gridWidth, setGridWidth] = useState(typeof window !== 'undefined' ? window.innerWidth - 32 : 1200);
 
   // Indicators State
   const [isIndicatorsModalOpen, setIsIndicatorsModalOpen] = useState(false);
@@ -94,16 +98,6 @@ const MainApplication: React.FC = () => {
     root.classList.remove(theme === 'dark' ? 'light' : 'dark');
     root.classList.add(theme);
   }, [theme]);
-
-  // Handle window resize for responsive grid
-  useEffect(() => {
-    const handleResize = () => {
-      setGridWidth(window.innerWidth - 32);
-    };
-    
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
 
   useEffect(() => {
@@ -201,17 +195,24 @@ const MainApplication: React.FC = () => {
 
   const latestData = processedChartData.length > 0 ? processedChartData[processedChartData.length - 1] : null;
 
-  // Layout Handlers
-  const handleLayoutChange = useCallback((newLayout: Layout[]) => {
-    setCurrentLayout(newLayout);
-    saveLayout(newLayout, currentPresetId);
+  // Layout change handlers
+  const handleLayoutChange = useCallback((layout: Layout[], allLayouts: Layouts) => {
+    setCurrentLayout(layout);
+    setCurrentLayouts(allLayouts);
+    saveLayout(layout, allLayouts, currentPresetId);
   }, [currentPresetId]);
 
+  const handleBreakpointChange = useCallback((newBreakpoint: string) => {
+    setCurrentBreakpoint(newBreakpoint);
+  }, []);
+
   const handlePresetChange = useCallback((preset: LayoutPreset) => {
+    const responsiveLayouts = createResponsiveLayouts(preset.layout);
     setCurrentLayout(preset.layout);
+    setCurrentLayouts(responsiveLayouts);
     setPanelVisibility(preset.panelVisibility);
     setCurrentPresetId(preset.id);
-    saveLayout(preset.layout, preset.id);
+    saveLayout(preset.layout, responsiveLayouts, preset.id);
     savePanelVisibility(preset.panelVisibility);
   }, []);
 
@@ -390,21 +391,23 @@ const MainApplication: React.FC = () => {
         />
       </Header>
 
-      {/* Customizable Grid Layout */}
+      {/* Customizable Responsive Grid Layout */}
       <main className="p-2 sm:p-4">
-        <GridLayout
+        <ResponsiveGridLayout
           className="layout"
-          layout={visiblePanels}
-          cols={12}
-          rowHeight={80}
-          width={gridWidth}
+          layouts={currentLayouts}
+          breakpoints={BREAKPOINTS}
+          cols={COLS}
+          rowHeight={ROW_HEIGHTS[currentBreakpoint as keyof typeof ROW_HEIGHTS] || 80}
           onLayoutChange={handleLayoutChange}
+          onBreakpointChange={handleBreakpointChange}
           isDraggable={true}
           isResizable={true}
           compactType="vertical"
           preventCollision={false}
           margin={[8, 8]}
-          containerPadding={[0, 0]}
+          containerPadding={[8, 8]}
+          useCSSTransforms={true}
         >
           {visiblePanels.map((item) => (
             <div 
@@ -432,7 +435,7 @@ const MainApplication: React.FC = () => {
               </div>
             </div>
           ))}
-        </GridLayout>
+        </ResponsiveGridLayout>
       </main>
 
       <footer className="text-center p-4 text-xs text-gray-500">

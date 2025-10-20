@@ -1,12 +1,16 @@
-/* React Grid Layout Custom Styles */
+/* React Grid Layout Custom Styles - Mobile First */
+
+/* Base styles - Mobile */
 .react-grid-layout {
   position: relative;
   transition: height 200ms ease;
+  min-height: 100vh;
 }
 
 .react-grid-item {
   transition: all 200ms ease;
   transition-property: left, top, width, height;
+  touch-action: none; /* Better touch interactions */
 }
 
 .react-grid-item img {
@@ -14,10 +18,15 @@
   user-select: none;
 }
 
+/* Resize handle - larger on mobile for better touch targets */
 .react-grid-item > .react-resizable-handle {
   position: absolute;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
+  bottom: 0;
+  right: 0;
+  cursor: se-resize;
+  padding: 4px;
 }
 
 .react-grid-item > .react-resizable-handle::after {
@@ -25,10 +34,23 @@
   position: absolute;
   right: 3px;
   bottom: 3px;
-  width: 5px;
-  height: 5px;
-  border-right: 2px solid rgba(255, 255, 255, 0.4);
-  border-bottom: 2px solid rgba(255, 255, 255, 0.4);
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid rgba(255, 255, 255, 0.6);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.6);
+}
+
+/* Tablet and up - smaller resize handle */
+@media (min-width: 768px) {
+  .react-grid-item > .react-resizable-handle {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .react-grid-item > .react-resizable-handle::after {
+    width: 5px;
+    height: 5px;
+  }
 }
 
 .react-grid-item.resizing {
@@ -95,16 +117,64 @@
   border: 2px dashed rgba(59, 130, 246, 0.6);
 }
 
-/* Responsive grid adjustments */
-@media (max-width: 768px) {
+/* Responsive grid adjustments - Mobile First */
+
+/* Extra Small Mobile (<480px) */
+@media (max-width: 479px) {
   .react-grid-item > .react-resizable-handle {
-    width: 30px;
-    height: 30px;
+    width: 32px;
+    height: 32px;
   }
   
   .react-grid-item > .react-resizable-handle::after {
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
+    border-width: 3px;
+  }
+  
+  /* Disable dragging on very small screens for better UX */
+  .react-grid-item.react-grid-dragging {
+    cursor: move;
+  }
+}
+
+/* Small Mobile (480px - 767px) */
+@media (min-width: 480px) and (max-width: 767px) {
+  .react-grid-item > .react-resizable-handle {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .react-grid-item > .react-resizable-handle::after {
+    width: 9px;
+    height: 9px;
+    border-width: 2.5px;
+  }
+}
+
+/* Tablet Portrait (768px - 995px) */
+@media (min-width: 768px) and (max-width: 995px) {
+  .react-grid-item > .react-resizable-handle {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .react-grid-item > .react-resizable-handle::after {
+    width: 7px;
+    height: 7px;
+  }
+}
+
+/* Ensure proper touch scrolling on mobile */
+@media (max-width: 768px) {
+  .react-grid-item {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Prevent text selection while dragging on mobile */
+  .react-grid-item.react-draggable-dragging * {
+    user-select: none !important;
+    -webkit-user-select: none !important;
   }
 }
 

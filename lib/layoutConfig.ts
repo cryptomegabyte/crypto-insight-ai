@@ -1,4 +1,4 @@
-import type { Layout } from 'react-grid-layout';
+import type { Layout, Layouts } from 'react-grid-layout';
 
 export type PanelId = 'chart' | 'ai-chat' | 'ai-feed' | 'market-data' | 'opportunities' | 'performance';
 
@@ -214,26 +214,32 @@ export const MOBILE_LAYOUT: Layout[] = [
 // Local storage keys
 export const STORAGE_KEYS = {
   LAYOUT: 'crypto-insight-layout',
+  LAYOUTS: 'crypto-insight-layouts',
   PRESET: 'crypto-insight-preset',
   PANEL_VISIBILITY: 'crypto-insight-panel-visibility',
   CUSTOM_LAYOUT: 'crypto-insight-custom-layout'
 };
 
 // Helper functions
-export function saveLayout(layout: Layout[], presetId?: string) {
+export function saveLayout(layout: Layout[], layouts?: Layouts, presetId?: string) {
   localStorage.setItem(STORAGE_KEYS.LAYOUT, JSON.stringify(layout));
+  if (layouts) {
+    localStorage.setItem(STORAGE_KEYS.LAYOUTS, JSON.stringify(layouts));
+  }
   if (presetId) {
     localStorage.setItem(STORAGE_KEYS.PRESET, presetId);
   }
 }
 
-export function loadLayout(): { layout: Layout[]; presetId?: string } {
+export function loadLayout(): { layout: Layout[]; layouts?: Layouts; presetId?: string } {
   const savedLayout = localStorage.getItem(STORAGE_KEYS.LAYOUT);
+  const savedLayouts = localStorage.getItem(STORAGE_KEYS.LAYOUTS);
   const savedPreset = localStorage.getItem(STORAGE_KEYS.PRESET);
   
   if (savedLayout) {
     return {
       layout: JSON.parse(savedLayout),
+      layouts: savedLayouts ? JSON.parse(savedLayouts) : undefined,
       presetId: savedPreset || undefined
     };
   }
