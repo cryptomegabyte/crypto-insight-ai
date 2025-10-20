@@ -8,6 +8,8 @@ export interface ScoredOpportunity {
   confidence: number; // 0-100
   riskLevel: 'low' | 'medium' | 'high';
   suggestedAction: 'watch' | 'consider' | 'strong_signal';
+  pair: string;
+  interval: string;
   rationale: string;
   dataPointIndex?: number;
 }
@@ -161,7 +163,9 @@ export const scoreOpportunity = (
   type: 'Pattern' | 'Indicator' | 'Volatility',
   title: string,
   description: string,
-  dataPointIndex: number
+  dataPointIndex: number,
+  pair: string,
+  interval: string
 ): ScoredOpportunity => {
   const confidence = calculateConfidenceScore(data, dataPointIndex, title);
   const riskLevel = calculateRiskLevel(data, dataPointIndex);
@@ -176,6 +180,8 @@ export const scoreOpportunity = (
     confidence,
     riskLevel,
     suggestedAction,
+    pair,
+    interval,
     rationale,
     dataPointIndex,
   };
@@ -240,4 +246,40 @@ export const calculateRiskRewardRatio = (
 
   if (risk === 0) return 0;
   return reward / risk;
+};
+
+/**
+ * Calculate overall score for trading opportunity based on technical indicators
+ * Returns a score between 0-100 where higher is more bullish
+ */
+export const calculateScore = (data: ChartDataPoint[]): number => {
+  if (data.length === 0) return 50; // Neutral
+
+  const latest = data[data.length - 1];
+  let score = 50; // Start neutral
+
+  // RSI contribution (30-70 range)
+  if (latest.rsi !== null && latest.rsi !== undefined) {
+    if (latest.rsi < 30) score -= 20; // Oversold, bearish
+    else if (latest.rsi > 70) score += 20; // Overbought, bullish
+    else if (latest.rsi > 50) score += (latest.rsi - 50) * 0.4; // Slightly bullish
+    else score -= (50 - latest.rsi) * 0.4; // Slightly bearish
+  }
+
+  // SMA contribution
+  if (latest.sma50 && latest.close > latest.sma50) score += 15; // Above SMA, bullish
+  else if (latest.sma50 && latest.close < latest.sma50) score -= 15; // Below SMA, bearish
+
+  // MACD contribution
+  if (latest.macd && latest.macdSignal) {
+    if (latest.macd > latest.macdSignal) score += 10; // Bullish crossover
+    else score -= 10; // Bearish crossover
+  }
+
+  // Bollinger Bands
+  if (latest.bbUpper && latest.bbLower && latest.close > latest.bbUpper) score += 10; // Above upper band, bullish momentum
+  else if (latest.bbLower && latest.close < latest.bbLower) score -= 10; // Below lower band, bearish momentum
+
+  // Clamp between 0 and 100
+  return Math.max(0, Math.min(100, score));
 };

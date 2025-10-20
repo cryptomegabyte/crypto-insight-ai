@@ -5,7 +5,7 @@ import type { ScoredOpportunity } from './scoringEngine';
 // This is a local analysis engine providing scored opportunities
 // No external APIs required - all analysis is client-side
 
-export const analyzeOpportunities = (data: ChartDataPoint[]): ScoredOpportunity[] => {
+export const analyzeOpportunities = (data: ChartDataPoint[], pair: string, interval: string): ScoredOpportunity[] => {
     const opportunities: ScoredOpportunity[] = [];
     if (data.length < 2) {
         return [];
@@ -29,7 +29,9 @@ export const analyzeOpportunities = (data: ChartDataPoint[]): ScoredOpportunity[
                 'Pattern',
                 'Bullish Engulfing Detected',
                 'A potential bottom reversal pattern has formed.',
-                dataPointIndex
+                dataPointIndex,
+                pair,
+                interval
             )
         );
     }
@@ -48,7 +50,9 @@ export const analyzeOpportunities = (data: ChartDataPoint[]): ScoredOpportunity[
                 'Pattern',
                 'Bearish Engulfing Detected',
                 'A potential top reversal pattern has formed.',
-                dataPointIndex
+                dataPointIndex,
+                pair,
+                interval
             )
         );
     }
@@ -63,7 +67,9 @@ export const analyzeOpportunities = (data: ChartDataPoint[]): ScoredOpportunity[
                     'Indicator',
                     'RSI is Oversold',
                     `RSI(14) just crossed below 30 (${last.rsi.toFixed(2)}).`,
-                    dataPointIndex
+                    dataPointIndex,
+                    pair,
+                    interval
                 )
             );
         }
@@ -75,7 +81,9 @@ export const analyzeOpportunities = (data: ChartDataPoint[]): ScoredOpportunity[
                     'Indicator',
                     'RSI is Overbought',
                     `RSI(14) just crossed above 70 (${last.rsi.toFixed(2)}).`,
-                    dataPointIndex
+                    dataPointIndex,
+                    pair,
+                    interval
                 )
             );
         }
@@ -99,7 +107,9 @@ export const analyzeOpportunities = (data: ChartDataPoint[]): ScoredOpportunity[
                         'Volatility',
                         'Bollinger Bands Squeezing',
                         'Low volatility suggests a potential breakout is imminent.',
-                        dataPointIndex
+                        dataPointIndex,
+                        pair,
+                        interval
                     )
                 );
             }
@@ -117,7 +127,9 @@ export const analyzeOpportunities = (data: ChartDataPoint[]): ScoredOpportunity[
                     'Indicator',
                     'MACD Bullish Crossover',
                     'The MACD line has crossed above its signal line.',
-                    dataPointIndex
+                    dataPointIndex,
+                    pair,
+                    interval
                 )
             );
         }
@@ -130,7 +142,9 @@ export const analyzeOpportunities = (data: ChartDataPoint[]): ScoredOpportunity[
                     'Indicator',
                     'MACD Bearish Crossover',
                     'The MACD line has crossed below its signal line.',
-                    dataPointIndex
+                    dataPointIndex,
+                    pair,
+                    interval
                 )
             );
         }
