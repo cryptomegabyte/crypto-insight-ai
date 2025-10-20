@@ -12,6 +12,7 @@ interface HeaderProps {
   onIndicatorsClick: () => void;
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
+  children?: React.ReactNode;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
@@ -19,6 +20,7 @@ const Header: React.FC<HeaderProps> = ({
   selectedInterval, setSelectedInterval, 
   onIndicatorsClick,
   theme, onToggleTheme,
+  children,
 }) => {
   const [isPairOpen, setIsPairOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -109,6 +111,9 @@ const Header: React.FC<HeaderProps> = ({
         >
             {theme === 'light' ? <MoonIcon className="w-4 h-4"/> : <SunIcon className="w-4 h-4"/>}
         </button>
+        
+        {/* Additional Controls (e.g., Layout Panel) */}
+        {children && <div className="ml-2">{children}</div>}
       </div>
       </div>
 

@@ -1,4 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import GridLayout, { Layout } from 'react-grid-layout';
+import 'react-grid-layout/css/styles.css';
+import 'react-resizable/css/styles.css';
+import './grid-layout.css';
 import Header from './components/Header';
 import CustomFinancialChart from './components/CustomFinancialChart';
 import MarketDataPanel from './components/MarketDataPanel';
@@ -13,6 +17,20 @@ import { analyzeOpportunities } from './lib/opportunityAnalyzer';
 import { generateChartSummary } from './lib/chartSummaryEngine';
 import AIChartSummary from './components/AIChartSummary';
 import AIChatAssistant from './components/AIChatAssistant';
+import AITradingFeed from './components/AITradingFeed';
+import LayoutControlPanel from './components/LayoutControlPanel';
+import { aiTradingFeed } from './lib/aiTradingFeed';
+import type { AIFeedItem } from './lib/aiTradingFeed';
+import { 
+  loadLayout, 
+  saveLayout, 
+  loadPanelVisibility, 
+  savePanelVisibility,
+  getPresetById,
+  type PanelId,
+  type LayoutPreset,
+  DEFAULT_PANELS
+} from './lib/layoutConfig';
 
 type IndicatorsState = {
   sma: boolean;
@@ -38,7 +56,20 @@ const MainApplication: React.FC = () => {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [aiChartSummary, setAiChartSummary] = useState('');
   const [isAiSummaryLoading, setIsAiSummaryLoading] = useState(false);
-  const [showAIChat, setShowAIChat] = useState(false);
+  
+  // Layout State
+  const savedLayoutData = loadLayout();
+  const savedPanelVis = loadPanelVisibility();
+  const [currentLayout, setCurrentLayout] = useState<Layout[]>(savedLayoutData.layout);
+  const [currentPresetId, setCurrentPresetId] = useState<string | undefined>(savedLayoutData.presetId);
+  const [panelVisibility, setPanelVisibility] = useState<Record<PanelId, boolean>>(
+    savedPanelVis || Object.fromEntries(
+      Object.entries(DEFAULT_PANELS).map(([id, panel]) => [id, panel.visible])
+    ) as Record<PanelId, boolean>
+  );
+  
+  // AI Feed State
+  const [feedItems, setFeedItems] = useState<AIFeedItem[]>([]);
 
   // Indicators State
   const [isIndicatorsModalOpen, setIsIndicatorsModalOpen] = useState(false);
@@ -145,6 +176,20 @@ const MainApplication: React.FC = () => {
     }
   }, [processedChartData]);
 
+  // Generate AI Feed Items
+  useEffect(() => {
+    if (processedChartData.length >= 20) {
+      const newItems = aiTradingFeed.generateFeedItems(
+        processedChartData,
+        selectedPair,
+        selectedInterval
+      );
+      if (newItems.length > 0) {
+        setFeedItems(prev => [...newItems, ...prev].slice(0, 50));
+      }
+    }
+  }, [processedChartData, selectedPair, selectedInterval]);
+
   useEffect(() => {
     const generateSummary = () => {
       if (processedChartData.length < 50) {
@@ -167,6 +212,63 @@ const MainApplication: React.FC = () => {
 
 
   const latestData = processedChartData.length > 0 ? processedChartData[processedChartData.length - 1] : null;
+
+  // Layout Handlers
+  const handleLayoutChange = useCallback((newLayout: Layout[]) => {
+    setCurrentLayout(newLayout);
+    saveLayout(newLayout, currentPresetId);
+  }, [currentPresetId]);
+
+  const handlePresetChange = useCallback((preset: LayoutPreset) => {
+    setCurrentLayout(preset.layout);
+    setPanelVisibility(preset.panelVisibility);
+    setCurrentPresetId(preset.id);
+    saveLayout(preset.layout, preset.id);
+    savePanelVisibility(preset.panelVisibility);
+  }, []);
+
+  const handlePanelVisibilityChange = useCallback((panelId: PanelId, visible: boolean) => {
+    const newVisibility = { ...panelVisibility, [panelId]: visible };
+    setPanelVisibility(newVisibility);
+    savePanelVisibility(newVisibility);
+  }, [panelVisibility]);
+
+  const handleResetLayout = useCallback(() => {
+    const balancedPreset = getPresetById('balanced')!;
+    handlePresetChange(balancedPreset);
+  }, [handlePresetChange]);
+
+  // AI Feed Actions
+  const handleFeedActionClick = useCallback((action: string, item: AIFeedItem) => {
+    // Map actions to questions for AI chat
+    const actionToQuestion: Record<string, string> = {
+      'analyze_pattern': 'Find patterns',
+      'view_chart': `Analyze ${item.pair}`,
+      'ask_exit': 'Should I sell?',
+      'explain_rsi': 'Explain RSI',
+      'ask_buy': 'Should I buy?',
+      'ask_strategy': 'What strategy should I use?',
+      'ask_trend': "What's the trend?",
+      'ask_risk': "What's the risk?",
+      'explain_volatility': 'Explain volatility',
+      'ask_levels': 'Show support and resistance',
+      'set_alert': `Set alert for ${item.pair}`,
+      'ask_volume': 'Analyze volume',
+      'explain_volume': 'Explain volume',
+      'explain_macd': 'Explain MACD'
+    };
+
+    const question = actionToQuestion[action];
+    if (question) {
+      // TODO: Send question to AI chat - for now just log
+      console.log('AI Chat Question:', question);
+    }
+  }, []);
+
+  const handleClearFeed = useCallback(() => {
+    setFeedItems([]);
+    aiTradingFeed.clearHistory();
+  }, []);
 
   const handleApplyStrategy = (strategyName: string) => {
     // Reset indicators to focus on the strategy, but keep volume preference
@@ -208,33 +310,24 @@ const MainApplication: React.FC = () => {
     setIsIndicatorsModalOpen(false); // Close modal after selection
   };
   
-  return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans">
-      <Header
-        selectedPair={selectedPair}
-        setSelectedPair={setSelectedPair}
-        selectedInterval={selectedInterval}
-        setSelectedInterval={setSelectedInterval}
-        onIndicatorsClick={() => setIsIndicatorsModalOpen(true)}
-        theme={theme}
-        onToggleTheme={toggleTheme}
-      />
-      <main className="p-2 sm:p-4 grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-2 sm:gap-4">
-        <div className="flex flex-col space-y-2 sm:space-y-4 min-w-0">
-          <MarketDataPanel latestData={latestData} liveTrade={liveTrade} pair={selectedPair} />
-          <div className="relative bg-white dark:bg-gray-800 p-2 sm:p-4 rounded-lg shadow-md flex-grow min-h-[400px] sm:min-h-[500px] overflow-hidden">
-             <AIChartSummary 
-                summary={aiChartSummary}
-                isLoading={isAiSummaryLoading}
-                theme={theme}
-              />
+  // Render panel content based on panel ID
+  const renderPanelContent = (panelId: PanelId) => {
+    switch (panelId) {
+      case 'chart':
+        return (
+          <div className="w-full h-full bg-gray-800 rounded-lg p-4 overflow-hidden">
+            <AIChartSummary 
+              summary={aiChartSummary}
+              isLoading={isAiSummaryLoading}
+              theme={theme}
+            />
             {loading ? (
               <div className="flex justify-center items-center h-full">
                 <p>Loading Chart Data...</p>
               </div>
             ) : error ? (
               <div className="flex justify-center items-center h-full">
-                 <p className="text-red-500">{error}</p>
+                <p className="text-red-500">{error}</p>
               </div>
             ) : (
               <div className="w-full h-full">
@@ -246,46 +339,144 @@ const MainApplication: React.FC = () => {
               </div>
             )}
           </div>
-        </div>
-        <div className="xl:col-span-1 space-y-2 sm:space-y-4">
-          {/* AI Chat Toggle Button */}
-          <button
-            onClick={() => setShowAIChat(!showAIChat)}
-            className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white px-4 py-3 rounded-lg shadow-md transition-all duration-300 font-semibold"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-            </svg>
-            <span>{showAIChat ? 'Hide' : 'Show'} AI Assistant</span>
-          </button>
+        );
+      case 'ai-chat':
+        return (
+          <div className="w-full h-full">
+            <AIChatAssistant
+              chartData={processedChartData}
+              pair={selectedPair}
+              interval={selectedInterval}
+              latestPrice={latestData?.close || 0}
+            />
+          </div>
+        );
+      case 'ai-feed':
+        return (
+          <AITradingFeed
+            feedItems={feedItems}
+            onActionClick={handleFeedActionClick}
+            onClearFeed={handleClearFeed}
+          />
+        );
+      case 'market-data':
+        return (
+          <MarketDataPanel 
+            latestData={latestData} 
+            liveTrade={liveTrade} 
+            pair={selectedPair} 
+          />
+        );
+      case 'opportunities':
+        return <OpportunityFeed opportunities={opportunities} />;
+      case 'performance':
+        return (
+          <div className="w-full h-full bg-gray-800 rounded-lg p-4">
+            <h3 className="text-white font-bold mb-2">Performance</h3>
+            <p className="text-gray-400 text-sm">Coming soon...</p>
+          </div>
+        );
+      case 'ai-summary':
+        return (
+          <div className="w-full h-full bg-gray-800 rounded-lg p-4 overflow-auto">
+            <h3 className="text-white font-bold mb-2 flex items-center gap-2">
+              <span>📝</span>
+              Chart Summary
+            </h3>
+            <AIChartSummary 
+              summary={aiChartSummary}
+              isLoading={isAiSummaryLoading}
+              theme={theme}
+            />
+          </div>
+        );
+      default:
+        return <div>Panel not found</div>;
+    }
+  };
 
-          {/* AI Chat Panel */}
-          {showAIChat && (
-            <div className="h-[600px]">
-              <AIChatAssistant
-                chartData={processedChartData}
-                pair={selectedPair}
-                interval={selectedInterval}
-                latestPrice={latestData?.close || 0}
-              />
+  // Get visible panels for grid layout
+  const visiblePanels = currentLayout.filter(item => 
+    panelVisibility[item.i as PanelId]
+  );
+
+  return (
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans">
+      <Header
+        selectedPair={selectedPair}
+        setSelectedPair={setSelectedPair}
+        selectedInterval={selectedInterval}
+        setSelectedInterval={setSelectedInterval}
+        onIndicatorsClick={() => setIsIndicatorsModalOpen(true)}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+      >
+        {/* Layout Control in Header */}
+        <LayoutControlPanel
+          currentPresetId={currentPresetId}
+          onPresetChange={handlePresetChange}
+          panelVisibility={panelVisibility}
+          onPanelVisibilityChange={handlePanelVisibilityChange}
+          onResetLayout={handleResetLayout}
+        />
+      </Header>
+
+      {/* Customizable Grid Layout */}
+      <main className="p-2 sm:p-4">
+        <GridLayout
+          className="layout"
+          layout={visiblePanels}
+          cols={12}
+          rowHeight={60}
+          width={typeof window !== 'undefined' ? window.innerWidth - 32 : 1200}
+          onLayoutChange={handleLayoutChange}
+          isDraggable={true}
+          isResizable={true}
+          compactType="vertical"
+          preventCollision={false}
+          margin={[8, 8]}
+        >
+          {visiblePanels.map((item) => (
+            <div 
+              key={item.i}
+              className="bg-gray-900/50 backdrop-blur-sm rounded-lg overflow-hidden border border-gray-700 hover:border-gray-600 transition-colors"
+            >
+              {/* Panel Header */}
+              <div className="flex items-center justify-between px-3 py-2 bg-gray-800/80 border-b border-gray-700">
+                <span className="text-sm font-semibold text-white flex items-center gap-2">
+                  <span>{DEFAULT_PANELS[item.i as PanelId].icon}</span>
+                  {DEFAULT_PANELS[item.i as PanelId].title}
+                </span>
+                <button
+                  onClick={() => handlePanelVisibilityChange(item.i as PanelId, false)}
+                  className="text-gray-400 hover:text-white transition-colors"
+                  title="Hide panel"
+                >
+                  ✕
+                </button>
+              </div>
+              
+              {/* Panel Content */}
+              <div className="w-full h-[calc(100%-40px)] overflow-hidden">
+                {renderPanelContent(item.i as PanelId)}
+              </div>
             </div>
-          )}
-
-          {/* Opportunity Feed */}
-          {!showAIChat && <OpportunityFeed opportunities={opportunities} />}
-        </div>
+          ))}
+        </GridLayout>
       </main>
+
       <footer className="text-center p-4 text-xs text-gray-500">
         <p>Data sourced from Kraken Exchange (mocked). This is not financial advice.</p>
-        <p>Crypto Insight AI &copy; 2024</p>
+        <p>Crypto Insight AI &copy; 2024 • Fully customizable layout • Drag panels to rearrange</p>
       </footer>
-       <IndicatorsModal
+
+      <IndicatorsModal
         isOpen={isIndicatorsModalOpen}
         onClose={() => setIsIndicatorsModalOpen(false)}
         activeIndicators={indicators}
         onToggleIndicator={(key) => setIndicators(prev => ({ ...prev, [key]: !prev[key] }))}
         onApplyStrategy={handleApplyStrategy}
-       />
+      />
     </div>
   );
 }
