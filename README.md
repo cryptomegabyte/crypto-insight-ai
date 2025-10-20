@@ -2,7 +2,7 @@
 
 A sophisticated real-time cryptocurrency trading dashboard with AI-powered analysis, technical indicators, and intelligent trading insights.
 
-![Crypto Insight AI Dashboard](./dashboard.png)
+![Crypto Insight AI Dashboard](./dashbaord.png)
 
 ## ✨ Features
 
